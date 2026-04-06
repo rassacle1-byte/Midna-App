@@ -1,57 +1,90 @@
 import flet as ft
 
 def main(page: ft.Page):
-    # Configuración básica compatible con versiones antiguas
-    page.title = "Midna AI"
+    page.title = "Midna AI Interface"
     page.theme_mode = "dark"
     page.bgcolor = "#050505"
-    page.vertical_alignment = "center"
-    page.horizontal_alignment = "center"
+    page.padding = 20
+    
+    # Historial de Chat con Scroll para textos largos
+    historial_chat = ft.Column(
+        expand=True,
+        scroll=ft.ScrollMode.ADAPTIVE,
+        spacing=15,
+    )
 
-    def iniciar_sistema(e):
-        if campo_nombre.value:
-            nombre = campo_nombre.value
-            page.controls.clear()
-            
-            # Interfaz estilo Jarvis / Midna
-            page.add(
+    def enviar_mensaje(e):
+        if campo_entrada.value:
+            # Tu mensaje
+            historial_chat.controls.append(
                 ft.Container(
-                    content=ft.Column([
-                        ft.Text(f"SISTEMA ACTIVADO", size=15, color="#00EAFF"),
-                        ft.Text(nombre.upper(), size=40, color="#00EAFF", weight="bold"),
-                        ft.Divider(color="#00EAFF"),
-                        # Imagen sin el atributo que daba error
-                        ft.Image(
-                            src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJpbm5ueHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4JnB0PWExJmU9ZSZmPTE/3o7TKMGpxx6676GZ8Y/giphy.gif",
-                            width=250,
-                            height=250,
-                        ),
-                        ft.Text("Midna lista para ayudar.", color="#00EAFF", italic=True),
-                    ], horizontal_alignment="center"),
-                    padding=30,
-                    border=ft.border.all(2, "#00EAFF"),
-                    border_radius=20,
+                    content=ft.Text(campo_entrada.value, color="white"),
+                    padding=12,
+                    bgcolor="#1a1a1a",
+                    border_radius=ft.border_radius.only(top_left=15, top_right=15, bottom_left=15),
+                    alignment=ft.alignment.center_right,
                 )
             )
+            # Respuesta visual de Midna
+            historial_chat.controls.append(
+                ft.Container(
+                    content=ft.Text("Procesando comando...", color="#00EAFF", italic=True),
+                    padding=12,
+                    border=ft.border.all(1, "#00EAFF"),
+                    border_radius=ft.border_radius.only(top_left=15, top_right=15, bottom_right=15),
+                )
+            )
+            campo_entrada.value = ""
             page.update()
 
-    # Pantalla de inicio (Login)
-    campo_nombre = ft.TextField(
-        label="Identificación de Usuario", 
-        border_color="#00EAFF", 
-        color="#00EAFF"
-    )
-    
-    btn_conectar = ft.ElevatedButton(
-        "CONECTAR A MIDNA", 
-        on_click=iniciar_sistema,
-        style=ft.ButtonStyle(color="#00EAFF")
+    # Cuadro de texto MULTILÍNEA (Ideal para textos largos)
+    campo_entrada = ft.TextField(
+        hint_text="Escribe a Midna...",
+        multiline=True,
+        min_lines=1,
+        max_lines=4,
+        expand=True,
+        border_color="#00EAFF",
+        focused_border_color="#00EAFF",
+        color="#00EAFF",
+        text_size=16,
     )
 
+    # BOTÓN DE ENVIAR (Icono estilo futurista)
+    btn_enviar = ft.Container(
+        content=ft.IconButton(
+            icon=ft.icons.SEND_ROUNDED,
+            icon_color="#050505",
+            on_click=enviar_mensaje,
+        ),
+        bgcolor="#00EAFF",
+        border_radius=10,
+        margin=ft.margin.only(left=10)
+    )
+
+    # Estructura Principal
     page.add(
-        ft.Text("PROYECTO MIDNA", size=30, color="#00EAFF", weight="bold"),
-        campo_nombre, 
-        btn_conectar
+        ft.Text("MIDNA CORE v1.0", size=12, color="#00EAFF", weight="bold", opacity=0.6),
+        
+        # Área de mensajes con borde de neón
+        ft.Container(
+            content=historial_chat,
+            expand=True,
+            padding=15,
+            border=ft.border.all(1, "#1a1a1a"),
+            border_radius=15,
+            bgcolor="#0a0a0a",
+        ),
+        
+        # Barra inferior de entrada
+        ft.Row(
+            controls=[
+                campo_entrada,
+                btn_enviar
+            ],
+            spacing=0,
+            vertical_alignment=ft.CrossAxisAlignment.END
+        )
     )
 
 ft.app(target=main)
