@@ -3,27 +3,28 @@ import requests
 import uuid
 
 def main(page: ft.Page):
-    # --- CONFIGURACIÓN JARVIS 3.0 (SIN SESIONES) ---
+    # --- CONFIGURACIÓN JARVIS ESTABLE ---
     page.title = "MIDNA - JARVIS Protocol"
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#000000"
     page.padding = 20
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    # Generamos un ID de acceso rápido para la sesión actual
+    # ID de sesión simple
     id_acceso = str(uuid.uuid4())[:8].upper()
 
     NEON_CYAN = "#00FFFF"
-    DARK_BLUE = "#001F3FEE"
+    DARK_BLUE = "#001F3F"
 
     # --- ELEMENTOS ---
     label_respuesta = ft.Text(
-        value=f"SISTEMA ONLINE.\nID: {id_acceso}\nESPERANDO COMANDO...", 
+        value=f"SISTEMA ONLINE. ID: {id_acceso}", 
         size=16, 
         color=NEON_CYAN,
         font_family="Consolas"
     )
 
+    # Caja de chat con scroll
     contenedor_chat = ft.Container(
         content=ft.Column(
             controls=[label_respuesta],
@@ -31,18 +32,16 @@ def main(page: ft.Page):
             expand=True,
         ),
         padding=20,
-        bgcolor="#0A111AEE",
+        bgcolor="#0A111A", # Fondo oscuro sólido para evitar errores de transparencia
         border=ft.border.all(2, NEON_CYAN),
         border_radius=5,
         expand=True,
-        shadow=ft.BoxShadow(spread_radius=1, blur_radius=10, color=NEON_CYAN),
     )
 
     input_mensaje = ft.TextField(
         label="INTRODUCIR COMANDO...", 
         border_color=NEON_CYAN,
         color=NEON_CYAN,
-        bgcolor="#05070AEE",
         on_submit=lambda e: enviar_a_midna(e),
     )
 
@@ -51,7 +50,7 @@ def main(page: ft.Page):
             return
             
         comando = input_mensaje.value
-        label_respuesta.value = "TRANSMITIENDO..."
+        label_respuesta.value = "PROCESANDO..."
         page.update()
 
         url_api = f"https://general-runtime.voiceflow.com/state/user/{id_acceso}/interact"
@@ -70,24 +69,28 @@ def main(page: ft.Page):
                     mensaje_final += item["payload"]["message"] + "\n\n"
             label_respuesta.value = mensaje_final.strip()
         except:
-            label_respuesta.value = "❌ ERROR: FALLO EN EL NÚCLEO."
+            label_respuesta.value = "❌ ERROR DE CONEXIÓN."
         
         input_mensaje.value = ""
         page.update()
 
-    # --- LÓGICA DE FONDO ---
-    # REEMPLAZA EL NOMBRE ENTRE COMILLAS CON TU USUARIO DE GITHUB
+    # --- FONDO SIMPLIFICADO ---
+    # Reemplaza 'tu_usuario' por tu usuario real de GitHub
     mi_usuario = "rassacle1-byte" 
-    fondo_url = f"https://raw.githubusercontent.com/{mi_usuario}/Midna-App/main/fondo_hud.png"
-
-    layout = ft.Container(
-        content=ft.Column(
-            controls=[
-                ft.Text("M I D N A", size=45, weight="bold", color=NEON_CYAN),
-                ft.Text("JARVIS PROTOCOL", size=14, color=NEON_CYAN),
-                ft.Divider(height=10, color="transparent"),
+    
+    # He quitado 'ImageFit' para que no de error
+    page.add(
+        ft.Stack([
+            # Imagen de fondo simple
+            ft.Image(
+                src=f"https://raw.githubusercontent.com/{mi_usuario}/Midna-App/main/fondo_hud.png",
+                opacity=0.3, # La hacemos un poco transparente para que se vea el chat
+            ),
+            # Contenido principal
+            ft.Column([
+                ft.Text("M I D N A", size=40, weight="bold", color=NEON_CYAN),
                 contenedor_chat,
-                ft.Divider(height=10, color="transparent"),
+                ft.Container(height=10),
                 input_mensaje,
                 ft.ElevatedButton(
                     "EJECUTAR", 
@@ -96,16 +99,9 @@ def main(page: ft.Page):
                     color=NEON_CYAN,
                     width=200
                 ),
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-        ),
-        padding=20,
-        image_src=fondo_url,
-        image_fit=ft.ImageFit.COVER,
-        expand=True,
+            ], alignment=ft.MainAxisAlignment.CENTER, expand=True)
+        ], expand=True)
     )
-
-    page.add(layout)
 
 if __name__ == "__main__":
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=8080)
