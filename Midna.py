@@ -3,22 +3,18 @@ import requests
 
 def main(page: ft.Page):
     # --- CONFIGURACIÓN ---
-    page.title = "Midna AI - Comunidad"
+    page.title = "Midna AI"
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#111827"
     page.padding = 20
     page.window_width = 450
     page.window_height = 750
 
-    # VARIABLE PARA GUARDAR EL NOMBRE DEL AMIGO
-    nombre_usuario = ft.Ref[ft.TextField]()
-
     # --- ELEMENTOS DE LA INTERFAZ ---
     label_respuesta = ft.Text(
         value="¡Hola! Soy Midna. ¿Cómo te llamas para que podamos empezar?", 
         size=16, 
-        color="white",
-        text_align=ft.TextAlign.LEFT,
+        color="white"
     )
 
     contenedor_scroll = ft.Column(
@@ -28,45 +24,55 @@ def main(page: ft.Page):
     )
 
     input_mensaje = ft.TextField(
-        label="Tu mensaje...", 
-        width=400,
+        label="Escribe tu mensaje aquí...", 
         border_color="#3B82F6",
         border_radius=15,
+        on_submit=lambda e: enviar_a_midna(e)
     )
 
+    # LA BARRA QUE QUEREMOS DESAPARECER
     input_nombre = ft.TextField(
-        ref=nombre_usuario,
-        label="Escribe tu nombre aquí primero",
-        width=300,
-        border_color="#FACC15", # Color amarillo para resaltar
+        label="Tu nombre",
+        width=250,
+        border_color="#FACC15",
+        hint_text="Escribe tu nombre para iniciar..."
+    )
+
+    # CONTENEDOR DE LA BARRA DE NOMBRE (Para poder ocultarlo todo junto)
+    fila_nombre = ft.Row(
+        controls=[input_nombre],
+        alignment=ft.MainAxisAlignment.CENTER,
+        visible=True # Al principio es visible
     )
 
     # --- LÓGICA DE ENVÍO ---
     def enviar_a_midna(e):
-        # Si no han puesto nombre, no los deja avanzar
-        if not nombre_usuario.current.value:
-            label_respuesta.value = "⚠️ ¡Ey! Primero dime tu nombre arriba para saber con quién hablo."
+        # 1. Verificar si hay nombre
+        if not input_nombre.value:
+            label_respuesta.value = "⚠️ Por favor, escribe tu nombre primero para conocernos."
             page.update()
             return
 
         if not input_mensaje.value:
             return
             
-        quien_habla = nombre_usuario.current.value
+        # 2. OCULTAR LA BARRA DE NOMBRE (Aquí ocurre la magia)
+        if fila_nombre.visible:
+            fila_nombre.visible = False
+            page.update()
+
+        quien_habla = input_nombre.value
         mensaje_texto = input_mensaje.value
         
-        label_respuesta.value = f"Pensando para {quien_habla}..."
+        label_respuesta.value = f"Midna está respondiendo a {quien_habla}..."
         page.update()
 
-        # Usamos el nombre del usuario para crear una sesión única en Voiceflow
+        # 3. CONEXIÓN CON VOICEFLOW
         url_api = f"https://general-runtime.voiceflow.com/state/user/{quien_habla}/interact"
-        
         headers = {
             "Authorization": "VF.DM.69d04b1f38894b2ad3a462fb.uE519RXQDw24JzZQ", 
             "Content-Type": "application/json"
         }
-        
-        # Le enviamos a Voiceflow el mensaje incluyendo el nombre para que sepa quién es
         payload = {
             "action": {"type": "text", "payload": f"Soy {quien_habla}. {mensaje_texto}"}
         }
@@ -80,22 +86,20 @@ def main(page: ft.Page):
                 if item.get("type") in ["text", "speak"]:
                     mensaje_final += item["payload"]["message"] + "\n\n"
             
-            # Personalizamos la respuesta con el nombre si la IA no lo hizo
             label_respuesta.value = mensaje_final.strip()
         except:
-            label_respuesta.value = "Error al conectar con Midna."
+            label_respuesta.value = "Error de conexión. Inténtalo de nuevo."
         
         input_mensaje.value = ""
         page.update()
 
-    # --- DISEÑO ---
+    # --- DISEÑO FINAL ---
     page.add(
         ft.Text("🤖 MIDNA AI", size=32, weight="bold", color="#3B82F6"),
-        ft.Text("Versión para amigos", size=14, color="gray"),
-        ft.Divider(height=10),
+        ft.Divider(height=10, color="transparent"),
         
-        # CUADRO DE NOMBRE (Solo lo usan al principio)
-        ft.Row([input_nombre], alignment=ft.MainAxisAlignment.CENTER),
+        # Esta es la fila que desaparecerá tras el primer envío
+        fila_nombre,
         
         ft.Container(
             content=contenedor_scroll,
@@ -106,15 +110,15 @@ def main(page: ft.Page):
             border=ft.border.all(1, "#374151")
         ),
         
-        ft.Divider(height=10, color="transparent"),
+        ft.Divider(height=20, color="transparent"),
         input_mensaje,
         ft.Container(height=10),
         ft.ElevatedButton(
-            "Hablar con Midna", 
+            "Enviar", 
             on_click=enviar_a_midna, 
             bgcolor="#3B82F6", 
             color="white",
-            width=250
+            width=150
         )
     )
 
