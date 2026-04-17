@@ -3,35 +3,34 @@ import requests
 import uuid
 
 def main(page: ft.Page):
-    # --- CONFIGURACIÓN TOTALMENTE COMPATIBLE ---
+    # --- CONFIGURACIÓN BÁSICA ---
     page.title = "MIDNA"
     page.bgcolor = "#00050A"
     page.padding = 20
-    page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
+    page.vertical_alignment = "center"
 
-    # ID para que Voiceflow te reconozca y tenga memoria
+    # Generamos un ID simple para la memoria
     id_usuario = str(uuid.uuid4())[:8]
 
     # --- FUNCIÓN: VOZ ---
     def hablar(texto):
         t = texto.replace("'", "").replace("\n", " ")
-        page.run_javascript("window.speechSynthesis.speak(new SpeechSynthesisUtterance('" + t + "'));")
+        page.run_javascript(f"window.speechSynthesis.speak(new SpeechSynthesisUtterance('{t}'));")
 
-    # --- DISEÑO DEL NÚCLEO (Sin nombres de iconos que fallen) ---
+    # --- DISEÑO DEL NÚCLEO (Solo un círculo naranja, sin iconos) ---
     nucleo = ft.Container(
-        content=ft.Icon(ft.icons.PLAY_CIRCLE_FILL, color="#FF7700", size=80),
-        width=200,
-        height=200,
-        bgcolor="#1A0D00",
-        border_radius=100,
-        border=ft.border.all(4, "#FF7700"),
+        width=150,
+        height=150,
+        bgcolor="#FF7700",
+        border_radius=75,
         alignment=ft.alignment.center,
-        on_click=lambda _: activar()
+        on_click=lambda _: activar(),
+        content=ft.Text("ON", color="white", weight="bold", size=30)
     )
 
-    # --- ELEMENTOS DE LA INTERFAZ ---
-    chat_display = ft.Text(value="PROTOCOLO LISTO", color="#00FFFF", size=16)
+    # --- INTERFAZ DE CHAT ---
+    chat_display = ft.Text(value="SISTEMA LISTO", color="#00FFFF")
     
     caja_chat = ft.Container(
         content=ft.Column([chat_display], scroll="auto"),
@@ -44,27 +43,26 @@ def main(page: ft.Page):
     )
 
     entrada = ft.TextField(
-        label="COMANDO DE VOZ O TEXTO",
+        label="Escribe aquí...",
         border_color="#00FFFF",
-        color="#00FFFF",
         visible=False,
         on_submit=lambda e: enviar(entrada.value)
     )
 
-    # --- LÓGICA DE ACTIVACIÓN ---
+    # --- LÓGICA ---
     def activar():
         inicio.visible = False
         interfaz_chat.visible = True
         page.vertical_alignment = "start"
         page.update()
-        hablar("Protocolo Midna activado. Leo, estoy a la espera de tus instrucciones.")
+        hablar("Midna activada.")
 
     def enviar(txt):
         if not txt: return
-        chat_display.value = "PROCESANDO..."
+        chat_display.value = "..."
         page.update()
         
-        url = "https://general-runtime.voiceflow.com/state/user/" + id_usuario + "/interact"
+        url = f"https://general-runtime.voiceflow.com/state/user/{id_usuario}/interact"
         headers = {"Authorization": "VF.DM.69d04b1f38894b2ad3a462fb.uE519RXQDw24JzZQ"}
         payload = {"action": {"type": "text", "payload": txt}}
 
@@ -77,17 +75,17 @@ def main(page: ft.Page):
             chat_display.value = respuesta.strip()
             hablar(chat_display.value)
         except:
-            chat_display.value = "ERROR DE CONEXIÓN AL NÚCLEO"
+            chat_display.value = "Error de red."
         
         entrada.value = ""
         page.update()
 
-    # --- ESTRUCTURA DE PANTALLAS ---
+    # --- PANTALLAS ---
     inicio = ft.Column([
-        ft.Text("M I D N A", size=50, color="#FF7700", weight="bold"),
+        ft.Text("M I D N A", size=40, color="#FF7700", weight="bold"),
         ft.Container(height=20),
         nucleo,
-        ft.Text("PRESIONE PARA INICIAR", color="#FF7700")
+        ft.Text("TOCA EL CÍRCULO", color="#FF7700")
     ], horizontal_alignment="center")
 
     interfaz_chat = ft.Column([
@@ -96,10 +94,9 @@ def main(page: ft.Page):
         entrada
     ], visible=False, expand=True)
 
-    page.add(inicio)
-    page.add(interfaz_chat)
+    page.add(inicio, interfaz_chat)
 
-    # Escucha de nombre "Midna" por JavaScript
+    # Activación por voz simple
     page.run_javascript("""
         var r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         r.lang = 'es-ES';
