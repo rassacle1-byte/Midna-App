@@ -3,133 +3,113 @@ import requests
 import uuid
 
 def main(page: ft.Page):
-    # --- CONFIGURACIÓN JARVIS ---
-    page.title = "MIDNA - PURE CODE"
-    page.theme_mode = "dark" 
+    # --- CONFIGURACIÓN TOTALMENTE COMPATIBLE ---
+    page.title = "MIDNA"
     page.bgcolor = "#00050A"
-    page.padding = 0
-    page.horizontal_alignment = "center"
+    page.padding = 20
     page.vertical_alignment = "center"
+    page.horizontal_alignment = "center"
 
-    id_acceso = str(uuid.uuid4())[:8].upper()
-    NEON_CYAN = "#00FFFF"
-    NEON_ORANGE = "#FF7700"
+    # ID para que Voiceflow te reconozca y tenga memoria
+    id_usuario = str(uuid.uuid4())[:8]
 
-    # --- FUNCIÓN: VOZ DE MIDNA ---
-    def midna_habla(texto):
-        texto_limpio = texto.replace("'", "").replace("\n", " ")
-        page.run_javascript(f"window.speechSynthesis.speak(new SpeechSynthesisUtterance('{texto_limpio}'));")
+    # --- FUNCIÓN: VOZ ---
+    def hablar(texto):
+        t = texto.replace("'", "").replace("\n", " ")
+        page.run_javascript("window.speechSynthesis.speak(new SpeechSynthesisUtterance('" + t + "'));")
 
-    # --- DISEÑO DEL NÚCLEO (HECHO 100% CON CÓDIGO) ---
-    nucleo_dibujo = ft.Stack([
-        # Anillo exterior tenue
-        ft.Container(width=220, height=220, border_radius=110, border=ft.border.all(1, "#331100")),
-        # Anillo medio
-        ft.Container(width=180, height=180, border_radius=90, border=ft.border.all(2, NEON_ORANGE)),
-        # Centro brillante
-        ft.Container(
-            width=120, height=120, border_radius=60, 
-            bgcolor="#442200",
-            content=ft.Icon(name="power_settings_new", color=NEON_ORANGE, size=50)
-        )
-    ], alignment=ft.alignment.center)
+    # --- DISEÑO DEL NÚCLEO (Sin nombres de iconos que fallen) ---
+    nucleo = ft.Container(
+        content=ft.Icon(ft.icons.PLAY_CIRCLE_FILL, color="#FF7700", size=80),
+        width=200,
+        height=200,
+        bgcolor="#1A0D00",
+        border_radius=100,
+        border=ft.border.all(4, "#FF7700"),
+        alignment=ft.alignment.center,
+        on_click=lambda _: activar()
+    )
 
-    # --- INTERFAZ DE CHAT AZUL (HUD) ---
-    label_respuesta = ft.Text(value="SISTEMA ONLINE...", size=16, color=NEON_CYAN, font_family="Consolas")
+    # --- ELEMENTOS DE LA INTERFAZ ---
+    chat_display = ft.Text(value="PROTOCOLO LISTO", color="#00FFFF", size=16)
     
-    contenedor_chat = ft.Container(
-        content=ft.Column([label_respuesta], scroll="auto", expand=True),
-        padding=20, 
-        bgcolor="#050F1A", # Fondo azul oscuro sólido
-        border=ft.border.all(2, NEON_CYAN),
-        border_radius=10, 
-        expand=True, 
+    caja_chat = ft.Container(
+        content=ft.Column([chat_display], scroll="auto"),
+        padding=15,
+        bgcolor="#050F1A",
+        border=ft.border.all(1, "#00FFFF"),
+        border_radius=10,
+        expand=True,
         visible=False
     )
 
-    input_mensaje = ft.TextField(
-        label="INTRODUCIR COMANDO...", 
-        border_color=NEON_CYAN, 
-        color=NEON_CYAN,
-        visible=False, 
-        on_submit=lambda e: enviar_a_midna(input_mensaje.value)
+    entrada = ft.TextField(
+        label="COMANDO DE VOZ O TEXTO",
+        border_color="#00FFFF",
+        color="#00FFFF",
+        visible=False,
+        on_submit=lambda e: enviar(entrada.value)
     )
 
     # --- LÓGICA DE ACTIVACIÓN ---
-    def activar_protocolo(e):
-        pantalla_inicio.visible = False
-        pantalla_chat.visible = True
+    def activar():
+        inicio.visible = False
+        interfaz_chat.visible = True
         page.vertical_alignment = "start"
         page.update()
-        midna_habla("Protocolo Midna iniciado. ¿Qué órdenes tiene para hoy, Leo?")
+        hablar("Protocolo Midna activado. Leo, estoy a la espera de tus instrucciones.")
 
-    # --- PANTALLA DE INICIO (Naranja) ---
-    pantalla_inicio = ft.Container(
-        content=ft.Column([
-            ft.Text("M I D N A", size=50, weight="bold", color=NEON_ORANGE),
-            ft.Container(height=30),
-            ft.GestureDetector(content=nucleo_dibujo, on_tap=activar_protocolo),
-            ft.Container(height=30),
-            ft.Text("TOCA EL NÚCLEO O DI 'MIDNA'", color=NEON_ORANGE, size=14, weight="bold")
-        ], horizontal_alignment="center"),
-        expand=True
-    )
-
-    # --- PANTALLA DE CHAT (Azul) ---
-    pantalla_chat = ft.Container(
-        content=ft.Column([
-            ft.Text("M I D N A   H U D", size=30, weight="bold", color=NEON_CYAN),
-            contenedor_chat,
-            ft.Container(height=10),
-            input_mensaje,
-            ft.Text("SISTEMA DE VOZ ACTIVO", color=NEON_CYAN, size=10)
-        ]),
-        visible=False, expand=True, padding=20
-    )
-
-    # --- CONEXIÓN CON VOICEFLOW ---
-    def enviar_a_midna(texto):
-        if not texto: return
-        label_respuesta.value = "TRANSMITIENDO..."
+    def enviar(txt):
+        if not txt: return
+        chat_display.value = "PROCESANDO..."
         page.update()
         
-        url = f"https://general-runtime.voiceflow.com/state/user/{id_acceso}/interact"
+        url = "https://general-runtime.voiceflow.com/state/user/" + id_usuario + "/interact"
         headers = {"Authorization": "VF.DM.69d04b1f38894b2ad3a462fb.uE519RXQDw24JzZQ"}
-        payload = {"action": {"type": "text", "payload": texto}}
+        payload = {"action": {"type": "text", "payload": txt}}
 
         try:
-            res = requests.post(url, json=payload, headers=headers).json()
-            msg = ""
-            for item in res:
-                if item.get("type") in ["text", "speak"]:
-                    msg += item["payload"]["message"] + " "
-            label_respuesta.value = msg.strip()
-            midna_habla(label_respuesta.value)
+            r = requests.post(url, json=payload, headers=headers).json()
+            respuesta = ""
+            for item in r:
+                if "payload" in item and "message" in item["payload"]:
+                    respuesta += item["payload"]["message"] + " "
+            chat_display.value = respuesta.strip()
+            hablar(chat_display.value)
         except:
-            label_respuesta.value = "ERROR: NÚCLEO NO RESPONDE."
+            chat_display.value = "ERROR DE CONEXIÓN AL NÚCLEO"
         
-        input_mensaje.value = ""
+        entrada.value = ""
         page.update()
 
-    # --- RECONOCIMIENTO DE VOZ (JS) ---
-    def iniciar_microfono():
-        page.run_javascript("""
-            const Reco = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            Reco.lang = 'es-ES';
-            Reco.continuous = true;
-            Reco.onresult = (e) => {
-                const p = e.results[e.results.length - 1][0].transcript.toLowerCase();
-                if (p.includes('midna')) {
-                    // Simula un click para activar la interfaz
-                    document.body.click(); 
-                }
-            };
-            Reco.start();
-        """)
+    # --- ESTRUCTURA DE PANTALLAS ---
+    inicio = ft.Column([
+        ft.Text("M I D N A", size=50, color="#FF7700", weight="bold"),
+        ft.Container(height=20),
+        nucleo,
+        ft.Text("PRESIONE PARA INICIAR", color="#FF7700")
+    ], horizontal_alignment="center")
 
-    # --- AÑADIR TODO A LA PÁGINA ---
-    page.add(ft.Stack([pantalla_inicio, pantalla_chat], expand=True))
-    iniciar_microfono()
+    interfaz_chat = ft.Column([
+        ft.Text("SISTEMA HUD", size=20, color="#00FFFF"),
+        caja_chat,
+        entrada
+    ], visible=False, expand=True)
+
+    page.add(inicio)
+    page.add(interfaz_chat)
+
+    # Escucha de nombre "Midna" por JavaScript
+    page.run_javascript("""
+        var r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        r.lang = 'es-ES';
+        r.continuous = true;
+        r.onresult = function(e) {
+            var p = e.results[e.results.length - 1][0].transcript.toLowerCase();
+            if(p.includes('midna')) { document.body.click(); }
+        };
+        r.start();
+    """)
 
 if __name__ == "__main__":
-    ft.app(target=main, view="web_browser", port=8080)
+    ft.app(target=main)
