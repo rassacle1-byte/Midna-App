@@ -4,89 +4,93 @@ import uuid
 
 def main(page: ft.Page):
     # --- CONFIGURACIÓN JARVIS ---
-    page.title = "MIDNA - CORE ENGINE"
-    page.theme_mode = ft.ThemeMode.DARK
+    page.title = "MIDNA - PURE CODE"
+    page.theme_mode = "dark" 
     page.bgcolor = "#00050A"
     page.padding = 0
-    page.margin = 0
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = "center"
+    page.vertical_alignment = "center"
 
     id_acceso = str(uuid.uuid4())[:8].upper()
     NEON_CYAN = "#00FFFF"
     NEON_ORANGE = "#FF7700"
 
-    # --- FUNCIÓN: VOZ ---
+    # --- FUNCIÓN: VOZ DE MIDNA ---
     def midna_habla(texto):
         texto_limpio = texto.replace("'", "").replace("\n", " ")
         page.run_javascript(f"window.speechSynthesis.speak(new SpeechSynthesisUtterance('{texto_limpio}'));")
 
-    # --- DIBUJO DEL NÚCLEO (CÓDIGO PURO) ---
+    # --- DISEÑO DEL NÚCLEO (HECHO 100% CON CÓDIGO) ---
     nucleo_dibujo = ft.Stack([
-        ft.Container(width=250, height=250, border_radius=125, border=ft.border.all(1, NEON_ORANGE), opacity=0.2),
-        ft.Container(width=200, height=200, border_radius=100, border=ft.border.all(3, NEON_ORANGE), opacity=0.4),
+        # Anillo exterior tenue
+        ft.Container(width=220, height=220, border_radius=110, border=ft.border.all(1, "#331100")),
+        # Anillo medio
+        ft.Container(width=180, height=180, border_radius=90, border=ft.border.all(2, NEON_ORANGE)),
+        # Centro brillante
         ft.Container(
-            width=150, height=150, border_radius=75, 
-            bgcolor=ft.colors.with_opacity(0.1, NEON_ORANGE),
-            border=ft.border.all(8, NEON_ORANGE),
-            shadow=ft.BoxShadow(spread_radius=10, blur_radius=40, color=NEON_ORANGE)
-        ),
-        ft.Icon(name=ft.icons.POWER_SETTINGS_NEW, color=NEON_ORANGE, size=60)
+            width=120, height=120, border_radius=60, 
+            bgcolor="#442200",
+            content=ft.Icon(name="power_settings_new", color=NEON_ORANGE, size=50)
+        )
     ], alignment=ft.alignment.center)
 
-    # --- INTERFAZ DE CHAT (OCULTA AL INICIO) ---
+    # --- INTERFAZ DE CHAT AZUL (HUD) ---
     label_respuesta = ft.Text(value="SISTEMA ONLINE...", size=16, color=NEON_CYAN, font_family="Consolas")
     
     contenedor_chat = ft.Container(
-        content=ft.Column([label_respuesta], scroll=ft.ScrollMode.AUTO, expand=True),
-        padding=20, bgcolor="#050F1AEE", border=ft.border.all(1, NEON_CYAN),
-        border_radius=10, expand=True, visible=False,
-        shadow=ft.BoxShadow(spread_radius=1, blur_radius=20, color=NEON_CYAN)
+        content=ft.Column([label_respuesta], scroll="auto", expand=True),
+        padding=20, 
+        bgcolor="#050F1A", # Fondo azul oscuro sólido
+        border=ft.border.all(2, NEON_CYAN),
+        border_radius=10, 
+        expand=True, 
+        visible=False
     )
 
     input_mensaje = ft.TextField(
-        label="INTRODUCIR COMANDO...", border_color=NEON_CYAN, color=NEON_CYAN,
-        visible=False, on_submit=lambda e: enviar_a_midna(input_mensaje.value)
+        label="INTRODUCIR COMANDO...", 
+        border_color=NEON_CYAN, 
+        color=NEON_CYAN,
+        visible=False, 
+        on_submit=lambda e: enviar_a_midna(input_mensaje.value)
     )
 
-    # --- LÓGICA DE CAMBIO DE INTERFAZ ---
-    def activar_midna(e=None):
+    # --- LÓGICA DE ACTIVACIÓN ---
+    def activar_protocolo(e):
         pantalla_inicio.visible = False
         pantalla_chat.visible = True
-        page.vertical_alignment = ft.MainAxisAlignment.START
+        page.vertical_alignment = "start"
         page.update()
-        midna_habla("Protocolo Midna iniciado. Sistemas al cien por ciento.")
+        midna_habla("Protocolo Midna iniciado. ¿Qué órdenes tiene para hoy, Leo?")
 
-    # --- PANTALLAS ---
+    # --- PANTALLA DE INICIO (Naranja) ---
     pantalla_inicio = ft.Container(
         content=ft.Column([
-            ft.Text("M I D N A", size=50, weight="bold", color=NEON_ORANGE, font_family="Consolas"),
-            ft.Container(height=40),
+            ft.Text("M I D N A", size=50, weight="bold", color=NEON_ORANGE),
+            ft.Container(height=30),
             ft.GestureDetector(content=nucleo_dibujo, on_tap=activar_protocolo),
-            ft.Container(height=40),
-            ft.Text("DI 'MIDNA' O TOCA EL NÚCLEO", color=NEON_ORANGE, size=16, italic=True)
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-        expand=True, alignment=ft.alignment.center
+            ft.Container(height=30),
+            ft.Text("TOCA EL NÚCLEO O DI 'MIDNA'", color=NEON_ORANGE, size=14, weight="bold")
+        ], horizontal_alignment="center"),
+        expand=True
     )
 
+    # --- PANTALLA DE CHAT (Azul) ---
     pantalla_chat = ft.Container(
         content=ft.Column([
             ft.Text("M I D N A   H U D", size=30, weight="bold", color=NEON_CYAN),
             contenedor_chat,
             ft.Container(height=10),
             input_mensaje,
-            ft.IconButton(icon=ft.icons.MIC, icon_color=NEON_CYAN, icon_size=30, on_click=lambda _: None)
+            ft.Text("SISTEMA DE VOZ ACTIVO", color=NEON_CYAN, size=10)
         ]),
-        visible=False, expand=True, padding=30
+        visible=False, expand=True, padding=20
     )
 
-    def activar_protocolo(e=None):
-        activar_midna()
-
-    # --- COMUNICACIÓN ---
+    # --- CONEXIÓN CON VOICEFLOW ---
     def enviar_a_midna(texto):
         if not texto: return
-        label_respuesta.value = "PROCESANDO..."
+        label_respuesta.value = "TRANSMITIENDO..."
         page.update()
         
         url = f"https://general-runtime.voiceflow.com/state/user/{id_acceso}/interact"
@@ -102,11 +106,12 @@ def main(page: ft.Page):
             label_respuesta.value = msg.strip()
             midna_habla(label_respuesta.value)
         except:
-            label_respuesta.value = "ERROR DE ENLACE."
+            label_respuesta.value = "ERROR: NÚCLEO NO RESPONDE."
+        
         input_mensaje.value = ""
         page.update()
 
-    # --- VOZ (JS) ---
+    # --- RECONOCIMIENTO DE VOZ (JS) ---
     def iniciar_microfono():
         page.run_javascript("""
             const Reco = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -114,14 +119,17 @@ def main(page: ft.Page):
             Reco.continuous = true;
             Reco.onresult = (e) => {
                 const p = e.results[e.results.length - 1][0].transcript.toLowerCase();
-                if (p.includes('midna')) document.dispatchEvent(new CustomEvent('activar_m'));
+                if (p.includes('midna')) {
+                    // Simula un click para activar la interfaz
+                    document.body.click(); 
+                }
             };
             Reco.start();
         """)
 
-    # --- CARGA FINAL ---
-    page.add(ft.Stack([pantalla_inicio, pantalla_chat]))
+    # --- AÑADIR TODO A LA PÁGINA ---
+    page.add(ft.Stack([pantalla_inicio, pantalla_chat], expand=True))
     iniciar_microfono()
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=8080)
+    ft.app(target=main, view="web_browser", port=8080)
